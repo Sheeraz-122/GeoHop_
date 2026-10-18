@@ -1,113 +1,75 @@
-# KeyGuard
+# GeoHop
 
-**A simple command-line tool that locks and unlocks your files with a password, using AES-256-GCM encryption.**
-
-KeyGuard is built in Python for personal privacy. Pick a file, enter a password, and get an encrypted copy that nobody can read without that password.
+A lightweight Python tool that generates a GPX route where the location changes every 10 seconds (or any interval you choose). Built for app testing and privacy experiments on Android, and runs in Termux.
 
 ## Features
 
-- AES-256-GCM authenticated encryption (detects wrong passwords and tampering)
-- scrypt key derivation to resist password guessing
-- Unique random salt and nonce for every file
-- Password prompt hidden while typing, with confirmation on encryption
-- Refuses to overwrite existing files unless you pass `--force`
+- New location every N seconds (default 10)
+- Coordinates from the command line or a CSV file
+- Repeat the route in a loop
+- No third-party dependencies
 
 ## Requirements
 
-- Python 3.9 or newer
-- The `cryptography` library (installed from `requirements.txt`)
+- Python 3.8 or newer
+- Android with Termux, or any Linux/macOS/Windows machine
+- A mock location app that can import GPX files (for Android use)
 
-## Installation
-
-### 1. Get the code
-
-```bash
-git clone https://github.com/Sheeraz-122/keyguard.git
-cd keyguard
-```
-
-Or just download `keyguard.py` and `requirements.txt` into a folder.
-
-### 2. Create a virtual environment (recommended)
-
-**Linux / macOS**
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-**Windows (PowerShell)**
-```powershell
-python -m venv venv
-venv\Scripts\Activate.ps1
-```
-
-### 3. Install dependencies
+## Installation (Termux)
 
 ```bash
+pkg update && pkg upgrade -y
+pkg install python git -y
+termux-setup-storage
+git clone https://github.com/Sheeraz-122/GeoHop.git
+cd GeoHop
+pip install -r requirements.txt
+```
+
+## Installation (Linux / macOS / Windows)
+
+```bash
+git clone https://github.com/Sheeraz-122/GeoHop.git
+cd GeoHop
 pip install -r requirements.txt
 ```
 
 ## Usage
 
-Encrypt a file (creates `secret.pdf.enc`):
+Using points on the command line:
+
 ```bash
-python keyguard.py encrypt secret.pdf
+python geohop.py -p 28.6139,77.2090 -p 28.6145,77.2100 -p 28.6152,77.2111 -o /sdcard/route.gpx
 ```
 
-Decrypt it (restores `secret.pdf`):
-```bash
-python keyguard.py decrypt secret.pdf.enc
-```
+Using a CSV file (one `lat,lon` per line):
 
-Choose your own output name:
 ```bash
-python keyguard.py encrypt notes.txt -o notes.locked
-python keyguard.py decrypt notes.locked -o notes.txt
-```
-
-Overwrite an existing output file:
-```bash
-python keyguard.py decrypt secret.pdf.enc --force
+python geohop.py -c points.csv -i 10 -l 5 -o /sdcard/route.gpx
 ```
 
 ### Options
 
-| Option | Description |
-|---|---|
-| `-o`, `--output` | Output file path |
-| `-f`, `--force` | Overwrite the output file if it exists |
-| `-h`, `--help` | Show help |
+| Option | Description | Default |
+|---|---|---|
+| `-p`, `--point` | A `lat,lon` coordinate, repeat for more | none |
+| `-c`, `--csv` | CSV file with coordinates | none |
+| `-i`, `--interval` | Seconds between points | 10 |
+| `-l`, `--loops` | Times to repeat the route | 1 |
+| `-o`, `--output` | Output GPX file | route.gpx |
 
-## Important notes
+## Using the route on Android
 
-- **Forgotten passwords cannot be recovered.** There is no backdoor.
-- The original file is **not** deleted after encryption. Confirm that decryption works, then remove the original yourself.
-- The whole file is loaded into memory, so KeyGuard suits documents, images and archives rather than multi-gigabyte files.
-- Use a long, unique password (a passphrase of 4+ random words works well).
+1. Enable Developer Options on your phone.
+2. Open Developer Options and select a mock location app.
+3. Import the generated `route.gpx` in that app and press play.
 
-## How it works
+Some apps ignore GPX timestamps and use their own speed setting, so adjust it in the app if needed.
 
-1. A random 16-byte salt is generated.
-2. scrypt (N=2^15, r=8, p=1) turns your password and the salt into a 256-bit key.
-3. The file is encrypted with AES-256-GCM using a random 12-byte nonce.
-4. The output stores a small header (format marker, salt, nonce, scrypt settings) followed by the ciphertext and authentication tag.
+## Responsible use
 
-## Roadmap
-
-- [ ] Chunked encryption for large files
-- [ ] Folder encryption
-- [ ] Optional secure deletion of the original
-- [ ] Simple GUI
-
-## Author
-
-Sheeraz ([`Sheeraz-122`](https://github.com/Sheeraz-122))
+Use GeoHop only for testing your own apps and protecting your own privacy. Do not use it to bypass attendance systems, commit fraud, or break the terms of any service.
 
 ## License
 
-Released under the [MIT License](LICENSE).
-
-## Disclaimer
-
-KeyGuard is a personal project and has not been independently audited. Keep backups of important files.
+Released under the MIT License. See [LICENSE](LICENSE).
